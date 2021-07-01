@@ -28,12 +28,14 @@ pthread_t pid[MAX_THREADS] = {0};
 pthread_mutex_t mutex;
 uint32_t thread_counts[MAX_THREADS] = {0};
 
-#define TSIZEE 100 //This is grid size, change to any number you'd like
+#define TSIZEE 200 //This is grid size, change to any number you'd like
 uint8_t TABLE[TSIZEE][TSIZEE];
 uint8_t TABLE2[TSIZEE][TSIZEE];
 ListArray LIVE_SQUARES;
 ListArray LIVE_SQUARES2;
-
+uint16_t num = 0;
+double simulation_speed = 0.5;
+uint8_t simulation_active = 0;
 void create_array(ListArray *d);
 void element_append(ListArray *d, Square v);
 void destroy_array(ListArray *d);
@@ -46,8 +48,8 @@ void *CellCheck(void * pv);
 uint8_t cell_exists(long PosX, long PosY);
 void print_table();
 void create_random_startup();
-uint16_t num = 0;
-double simulation_speed = 0.5;
+
+
 int main(void)
 {
 	srand(time(NULL)); 
@@ -72,7 +74,7 @@ int main(void)
         else if (IsKeyDown(KEY_W)) camera.target.y -=2;
         else if (IsKeyDown(KEY_S)) camera.target.y +=2;
 
-        camera.zoom += ((float)GetMouseWheelMove()*0.1f);
+        camera.zoom += ((float)GetMouseWheelMove()*0.3f);
         
         if (IsKeyPressed(KEY_Q)){
             num = 0;   
@@ -84,27 +86,34 @@ int main(void)
             simulation_speed /= 2;
             floor(simulation_speed);
         } 
-
+        if (IsKeyPressed(KEY_Z))
+        {
+            simulation_active = !simulation_active;
+        }
+        
         if (IsKeyPressed(KEY_R))
         {
             camera.zoom = 5.0f;
             camera.rotation = 0.0f;
         }
-        if (simulation_speed >= 1)
+        if (simulation_active)
         {
-            for (size_t i = 0; i < simulation_speed; i++)
+            if (simulation_speed >= 1)
             {
-                do_stuff();
-            }
-        }else{
-            if (num * simulation_speed != 1)
-            {
-                num++;
+                for (size_t i = 0; i < simulation_speed; i++)
+                {
+                    do_stuff();
+                }
             }else{
-                do_stuff();
-                num = 0;
+                if (num * simulation_speed != 1)
+                {
+                    num++;
+                }else{
+                    do_stuff();
+                    num = 0;
+                }
+                
             }
-            
         }
         
         BeginDrawing();
@@ -124,14 +133,14 @@ int main(void)
             DrawText("Free 2d camera controls:", 20, 20, 10, BLACK);
             DrawText("- WASD to move around", 40, 40, 10, DARKGRAY);
             DrawText("- Mouse Wheel to Zoom in-out", 40, 60, 10, DARKGRAY);
-            DrawText("- R to reset Zoom and Rotation", 40, 1800, 10, DARKGRAY);
+            DrawText("- R to reset Zoom and Rotation", 40, 80, 10, DARKGRAY);
             DrawText("- Q / E to control the simulations speed", 40, 100, 10, DARKGRAY);
-            DrawText(TextFormat("Current simulation speed %lf",simulation_speed), 40, 120, 10, DARKGRAY);
+            DrawText("- Z to stop / restart the simulation", 40, 120, 10, DARKGRAY);
+            DrawText(TextFormat("Current simulation speed %lf (cycle/s per frame)",simulation_speed), 20, 140, 10, BLACK);
         EndDrawing();
     }
 
     CloseWindow();        // Close window and OpenGL context
-
     return 0;
 }
 
@@ -213,7 +222,7 @@ void create_random_startup() {
 	{
 		for (long k = 0; k < TSIZEE; k++)
 		{
-			TABLE[i][k] = (rand() % 2) && (rand() % 2) && (rand() % 2); 
+			TABLE[i][k] = (rand() % 2) && (rand() % 2)&& (rand() % 2); 
 			if (TABLE[i][k])
 			{
 				Square square;
